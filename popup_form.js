@@ -1,5 +1,5 @@
 // 获取URL参数确定显示哪个表单
-const urlParams = new URLSearchParams(window.location.search);
+const urlParams = getUrlParams();
 const formType = urlParams.get('form');
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -27,22 +27,21 @@ document.addEventListener('DOMContentLoaded', function() {
         window.close();
     });
 
-// 使用当前页面地址按钮点击事件
-document.getElementById('use-current-page').addEventListener('click', function() {
-  // 优先使用URL参数中的当前页面URL，如果没有则通过消息传递获取
-  const urlParams = new URLSearchParams(window.location.search);
-  const currentUrl = urlParams.get('currentUrl');
-  if (currentUrl) {
-    document.getElementById('new-url').value = decodeURIComponent(currentUrl);
-  } else {
-    // 如果没有URL参数，则通过消息传递从父窗口获取当前页面URL
-    chrome.runtime.sendMessage({action: "getCurrentPageUrl"}, function(response) {
-      if (response && response.url) {
-        document.getElementById('new-url').value = response.url;
-      }
+    // 使用当前页面地址按钮点击事件
+    document.getElementById('use-current-page').addEventListener('click', function() {
+        // 优先使用URL参数中的当前页面URL，如果没有则通过消息传递获取
+        const currentUrl = urlParams.get('currentUrl');
+        if (currentUrl) {
+            document.getElementById('new-url').value = decodeURIComponent(currentUrl);
+        } else {
+            // 如果没有URL参数，则通过消息传递从父窗口获取当前页面URL
+            chrome.runtime.sendMessage({action: "getCurrentPageUrl"}, function(response) {
+                if (response && response.url) {
+                    document.getElementById('new-url').value = response.url;
+                }
+            });
+        }
     });
-  }
-});
 });
 
 // 保存书签
@@ -52,29 +51,29 @@ function saveBookmark() {
     const desc = document.getElementById('new-desc').value.trim();
 
     if (!title) {
-        alert('请输入标题');
+        showMessage('请输入标题');
         return;
     }
     if (!url) {
-        alert('请输入网址');
+        showMessage('请输入网址');
         return;
     }
 
-    // 添加http://前缀如果不存在
-    const fullUrl = !url.startsWith('http://') && !url.startsWith('https://') 
-        ? 'http://' + url 
-        : url;
+    if (!validateUrl(url)) {
+        showMessage('请输入有效的网址');
+        return;
+    }
 
     // 发送消息到背景脚本保存书签
     chrome.runtime.sendMessage({
         action: "saveBookmark",
-        data: { title, url: fullUrl, desc }
+        data: { title, url, desc }
     }, function(response) {
         if (response && response.success) {
-            alert('书签保存成功！');
+            showMessage('书签保存成功！');
             window.close();
         } else {
-            alert('保存失败，请重试。');
+            showMessage('保存失败，请重试。');
         }
     });
 }
@@ -85,7 +84,7 @@ function deleteBookmark() {
     const index = select.value;
 
     if (!index && index !== 0) {
-        alert('请选择要删除的书签');
+        showMessage('请选择要删除的书签');
         return;
     }
 
@@ -95,11 +94,11 @@ function deleteBookmark() {
         data: { index: parseInt(index) }
     }, function(response) {
         if (response && response.success) {
-            alert('书签删除成功！');
+            showMessage('书签删除成功！');
             // 更新选项列表
             updateDeleteOptions();
         } else {
-            alert('删除失败，请重试。');
+            showMessage('删除失败，请重试。');
         }
     });
 }

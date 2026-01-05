@@ -4,51 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>书签操作</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            width: 350px;
-            margin: 0;
-            padding: 15px;
-        }
-        #add-form, #delete-form {
-            background-color: #f0f0f0;
-            padding: 15px;
-            border-radius: 5px;
-        }
-        input, textarea, button, select {
-            display: block;
-            width: 100%;
-            margin-bottom: 10px;
-            padding: 8px;
-            box-sizing: border-box;
-            font-size: 0.9em;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #cancel-btn, #cancel-delete-btn {
-            background-color: #f44336;
-        }
-        #cancel-btn:hover, #cancel-delete-btn:hover {
-            background-color: #d32f2f;
-        }
-        .form-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        .form-buttons button {
-            flex: 1;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="form-body">
     <div id="add-form" style="display: none;">
         <h3>添加新书签</h3>
         <input type="text" id="new-title" placeholder="标题" required>
@@ -70,6 +28,7 @@
         </div>
     </div>
 
+    <script src="utils.js"></script>
     <script src="popup_form.js"></script>
 </body>
 </html>
