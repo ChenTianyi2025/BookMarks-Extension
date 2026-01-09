@@ -78,6 +78,22 @@ body {
     background-color: #d32f2f;
 }
 
+.popup-body #export-btn {
+    background-color: #2196F3;
+}
+
+.popup-body #export-btn:hover {
+    background-color: #0b7dda;
+}
+
+.popup-body #import-btn {
+    background-color: #FF9800;
+}
+
+.popup-body #import-btn:hover {
+    background-color: #e68900;
+}
+
 /* 表单页面样式 */
 .form-body {
     width: 350px;
