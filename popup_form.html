@@ -13,6 +13,14 @@
         <input type="text" id="new-url" placeholder="网址 (例如: https://example.com)" required>
         <button id="use-current-page">使用当前页面地址</button>
         <textarea id="new-desc" placeholder="描述" rows="3"></textarea>
+        <div class="group-section">
+            <div class="group-label">选择分组：</div>
+            <div id="existing-groups" class="existing-groups"></div>
+            <div class="new-group">
+                <input type="text" id="new-group-name" placeholder="新建分组名称">
+                <button id="add-group-btn">添加分组</button>
+            </div>
+        </div>
         <div class="form-buttons">
             <button id="save-btn">保存</button>
             <button id="cancel-btn">取消</button>

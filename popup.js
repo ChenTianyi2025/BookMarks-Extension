@@ -1,10 +1,17 @@
 // 加载保存的书签
 document.addEventListener('DOMContentLoaded', function() {
     loadBookmarks();
+    loadGroupFilters();
     
     // 搜索框输入事件
     document.getElementById('search-input').addEventListener('input', function() {
         loadBookmarks(this.value.toLowerCase());
+    });
+    
+    // 显示全部按钮点击事件
+    document.getElementById('show-all-groups').addEventListener('click', function() {
+        clearGroupFilters();
+        loadBookmarks();
     });
     
     // 添加按钮点击事件
@@ -39,6 +46,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         e.target.value = '';
     });
+
+    // 监听刷新请求
+    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+        if (request.action === "refreshBookmarks") {
+            loadBookmarks(document.getElementById('search-input').value.toLowerCase());
+            loadGroupFilters();
+        }
+    });
 });
 
 // 加载书签
@@ -46,17 +61,87 @@ function loadBookmarks(searchTerm = '') {
     const container = document.getElementById('bookmarks-container');
     container.innerHTML = '';
     
+    
+    // 获取当前选中的分组
+    const activeButtons = document.querySelectorAll('.filter-btn.active');
+    const selectedGroups = Array.from(activeButtons).map(btn => btn.dataset.group);
+    
     chrome.storage.sync.get({bookmarks: []}, function(data) {
         const bookmarks = data.bookmarks;
         
         // 使用工具函数过滤书签
-        const filteredBookmarks = filterBookmarks(bookmarks, searchTerm);
+        let filteredBookmarks = filterBookmarks(bookmarks, searchTerm);
+        
+        // 应用分组筛选
+        filteredBookmarks = filterByGroups(filteredBookmarks);
         
         filteredBookmarks.forEach(bookmark => {
-            const bookmarkElement = createBookmarkElement(bookmark);
+            const bookmarkElement = createBookmarkElement(bookmark, selectedGroups);
             container.appendChild(bookmarkElement);
         });
     });
+}
+
+function loadGroupFilters() {
+    chrome.storage.sync.get({bookmarks: []}, function(data) {
+        const bookmarks = data.bookmarks;
+        const allGroups = getAllGroups(bookmarks);
+        
+        const container = document.getElementById('group-filters');
+        container.innerHTML = '';
+        
+        allGroups.forEach(group => {
+            const button = document.createElement('button');
+            button.className = 'filter-btn';
+            button.textContent = group;
+            button.dataset.group = group;
+            
+            button.addEventListener('click', function() {
+                toggleGroupFilter(this);
+                loadBookmarks(document.getElementById('search-input').value.toLowerCase());
+            });
+            
+            container.appendChild(button);
+        });
+    });
+}
+
+function toggleGroupFilter(button) {
+    button.classList.toggle('active');
+}
+
+function clearGroupFilters() {
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(button => button.classList.remove('active'));
+}
+
+function filterByGroups(bookmarks) {
+    const activeButtons = document.querySelectorAll('.filter-btn.active');
+    
+    if (activeButtons.length === 0) {
+        return bookmarks;
+    }
+    
+    const selectedGroups = Array.from(activeButtons).map(btn => btn.dataset.group);
+    
+    return bookmarks.filter(bookmark => {
+        if (!bookmark.groups || bookmark.groups.length === 0) {
+            return false;
+        }
+        return bookmark.groups.some(group => selectedGroups.includes(group));
+    });
+}
+
+function getAllGroups(bookmarks) {
+    const groups = new Set();
+    
+    bookmarks.forEach(bookmark => {
+        if (bookmark.groups && Array.isArray(bookmark.groups)) {
+            bookmark.groups.forEach(group => groups.add(group));
+        }
+    });
+    
+    return Array.from(groups).sort();
 }
 
 function exportBookmarks() {
@@ -178,10 +263,16 @@ function mergeBookmarks(existingBookmarks, importedBookmarks) {
     const urlMap = new Map();
     
     existingBookmarks.forEach(bookmark => {
+        if (!bookmark.groups) {
+            bookmark.groups = [];
+        }
         urlMap.set(bookmark.url, bookmark);
     });
     
     importedBookmarks.forEach(bookmark => {
+        if (!bookmark.groups) {
+            bookmark.groups = [];
+        }
         urlMap.set(bookmark.url, bookmark);
     });
     

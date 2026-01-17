@@ -26,8 +26,8 @@ function openFormPopup(formType, currentUrl = '') {
     chrome.windows.create({
         url: url,
         type: 'popup',
-        width: 400,
-        height: 800
+        width: 500,
+        height: 700
     });
 }
 
@@ -55,13 +55,24 @@ function showMessage(message, type = 'info') {
 }
 
 // 创建书签元素
-function createBookmarkElement(bookmark) {
+function createBookmarkElement(bookmark, selectedGroups = []) {
     const div = document.createElement('div');
     div.className = 'bookmark';
+    
+    let groupsHtml = '';
+    if (bookmark.groups && bookmark.groups.length > 0) {
+        groupsHtml = `<div class="groups">${bookmark.groups.map(g => {
+            const isSelected = selectedGroups.length === 0 || selectedGroups.includes(g);
+            const opacityClass = isSelected ? 'group-tag-visible' : 'group-tag-transparent';
+            return `<span class="group-tag ${opacityClass}">${g}</span>`;
+        }).join('')}</div>`;
+    }
+    
     div.innerHTML = `
         <div class="title">${bookmark.title}</div>
         <div class="url">${bookmark.url}</div>
         <div class="desc">${bookmark.desc}</div>
+        ${groupsHtml}
     `;
     
     // 双击跳转

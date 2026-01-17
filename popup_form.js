@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 根据参数显示相应的表单
     if (formType === 'add') {
         document.getElementById('add-form').style.display = 'block';
+        loadExistingGroups();
     } else if (formType === 'delete') {
         document.getElementById('delete-form').style.display = 'block';
         updateDeleteOptions();
@@ -42,7 +43,72 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+
+    // 添加分组按钮点击事件
+    document.getElementById('add-group-btn').addEventListener('click', addNewGroup);
 });
+
+function loadExistingGroups() {
+    chrome.runtime.sendMessage({action: "getBookmarks"}, function(response) {
+        if (response && response.bookmarks) {
+            const bookmarks = response.bookmarks;
+            const allGroups = getAllGroups(bookmarks);
+            
+            const container = document.getElementById('existing-groups');
+            container.innerHTML = '';
+            
+            allGroups.forEach(group => {
+                const label = document.createElement('label');
+                label.className = 'group-checkbox';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = group;
+                
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(group));
+                
+                container.appendChild(label);
+            });
+        }
+    });
+}
+
+function addNewGroup() {
+    const input = document.getElementById('new-group-name');
+    const groupName = input.value.trim();
+    
+    if (!groupName) {
+        showMessage('请输入分组名称');
+        return;
+    }
+    
+    const container = document.getElementById('existing-groups');
+    
+    // 检查是否已存在该分组
+    const existingCheckboxes = container.querySelectorAll('input[type="checkbox"]');
+    for (const checkbox of existingCheckboxes) {
+        if (checkbox.value === groupName) {
+            showMessage('该分组已存在');
+            return;
+        }
+    }
+    
+    const label = document.createElement('label');
+    label.className = 'group-checkbox';
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = groupName;
+    checkbox.checked = true;
+    
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(groupName));
+    
+    container.appendChild(label);
+    
+    input.value = '';
+}
 
 // 保存书签
 function saveBookmark() {
@@ -64,13 +130,22 @@ function saveBookmark() {
         return;
     }
 
+    // 获取选中的分组
+    const selectedGroups = [];
+    const checkboxes = document.querySelectorAll('#existing-groups input[type="checkbox"]:checked');
+    checkboxes.forEach(checkbox => {
+        selectedGroups.push(checkbox.value);
+    });
+
     // 发送消息到背景脚本保存书签
     chrome.runtime.sendMessage({
         action: "saveBookmark",
-        data: { title, url, desc }
+        data: { title, url, desc, groups: selectedGroups }
     }, function(response) {
         if (response && response.success) {
             showMessage('书签保存成功！');
+            // 通知主页面刷新
+            chrome.runtime.sendMessage({action: "refreshBookmarks"});
             window.close();
         } else {
             showMessage('保存失败，请重试。');
@@ -95,6 +170,8 @@ function deleteBookmark() {
     }, function(response) {
         if (response && response.success) {
             showMessage('书签删除成功！');
+            // 通知主页面刷新
+            chrome.runtime.sendMessage({action: "refreshBookmarks"});
             // 更新选项列表
             updateDeleteOptions();
         } else {
