@@ -93,3 +93,16 @@ function filterBookmarks(bookmarks, searchTerm) {
         (bookmark.desc && bookmark.desc.toLowerCase().includes(searchTerm))
     );
 }
+
+// 获取所有分组
+function getAllGroups(bookmarks) {
+    const groups = new Set();
+    
+    bookmarks.forEach(bookmark => {
+        if (bookmark.groups && Array.isArray(bookmark.groups)) {
+            bookmark.groups.forEach(group => groups.add(group));
+        }
+    });
+    
+    return Array.from(groups).sort();
+}

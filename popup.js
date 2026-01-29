@@ -54,6 +54,16 @@ document.addEventListener('DOMContentLoaded', function() {
             loadGroupFilters();
         }
     });
+
+    // 监听存储变化，自动刷新书签
+    chrome.storage.onChanged.addListener(function(changes, namespace) {
+        if (namespace === 'sync' && changes.bookmarks) {
+            setTimeout(() => {
+                loadBookmarks(document.getElementById('search-input').value.toLowerCase());
+                loadGroupFilters();
+            }, 100);
+        }
+    });
 });
 
 // 加载书签
@@ -132,18 +142,6 @@ function filterByGroups(bookmarks) {
     });
 }
 
-function getAllGroups(bookmarks) {
-    const groups = new Set();
-    
-    bookmarks.forEach(bookmark => {
-        if (bookmark.groups && Array.isArray(bookmark.groups)) {
-            bookmark.groups.forEach(group => groups.add(group));
-        }
-    });
-    
-    return Array.from(groups).sort();
-}
-
 function exportBookmarks() {
     chrome.storage.sync.get({bookmarks: []}, function(data) {
         const bookmarks = data.bookmarks;
@@ -220,8 +218,11 @@ function importBookmarks(file) {
                 }
                 
                 chrome.storage.sync.set({bookmarks: finalBookmarks}, function() {
-                    loadBookmarks();
-                    showMessage(message, 'success');
+                    setTimeout(() => {
+                        loadBookmarks();
+                        loadGroupFilters();
+                        showMessage(message, 'success');
+                    }, 100);
                 });
             });
         } catch (error) {
